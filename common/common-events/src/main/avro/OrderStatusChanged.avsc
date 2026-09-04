@@ -1,0 +1,30 @@
+{
+  "type": "record",
+  "name": "OrderStatusChanged",
+  "namespace": "com.stoliar.events.order",
+  "fields": [
+    {
+      "name": "orderId",
+      "type": "string"
+    },
+    {
+      "name": "userId",
+      "type": "string"
+    },
+    {
+      "name": "oldStatus",
+      "type": "string"
+    },
+    {
+      "name": "newStatus",
+      "type": "string"
+    },
+    {
+      "name": "changedAt",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    }
+  ]
+}

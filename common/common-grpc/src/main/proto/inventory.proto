@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package com.serviceorders.inventory.v1;
+
+option java_multiple_files = true;
+option java_package = "com.serviceorders.common.grpc.inventory.v1";
+option java_outer_classname = "InventoryProto";
+
+service InventoryService {
+
+  rpc CheckAvailability(CheckAvailabilityRequest)
+      returns (CheckAvailabilityResponse);
+
+  rpc ReserveInventory(ReserveInventoryRequest)
+      returns (ReserveInventoryResponse);
+
+  rpc ReleaseInventory(ReleaseInventoryRequest)
+      returns (ReleaseInventoryResponse);
+}
+
+message CheckAvailabilityRequest {
+  repeated InventoryItem items = 1;
+}
+
+message CheckAvailabilityResponse {
+  bool available = 1;
+  repeated InventoryItemAvailability items = 2;
+}
+
+message InventoryItem {
+  string product_id = 1;
+  int32 quantity = 2;
+}
+
+message InventoryItemAvailability {
+  string product_id = 1;
+  int32 requested_quantity = 2;
+  int32 available_quantity = 3;
+  bool available = 4;
+}
+
+message ReserveInventoryRequest {
+  string order_id = 1;
+  repeated InventoryItem items = 2;
+}
+
+message ReserveInventoryResponse {
+  bool reserved = 1;
+  string reason = 2;
+}
+
+message ReleaseInventoryRequest {
+  string order_id = 1;
+}
+
+message ReleaseInventoryResponse {
+  bool released = 1;
+}

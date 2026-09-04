@@ -1,0 +1,27 @@
+# Gradle wrapper and shell scripts
+gradlew text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+**/Dockerfile text eol=lf
+
+# Windows scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Text files
+*.java text
+*.kt text
+*.kts text
+*.yaml text
+*.yml text
+*.properties text
+*.md text
+*.sql text
+
+# Binary files
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary

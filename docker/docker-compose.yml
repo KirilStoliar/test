@@ -1,0 +1,305 @@
+name: service-orders
+
+services:
+
+  # PostgreSQL
+
+  postgres:
+    image: postgres:15
+    container_name: service-orders-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - service-orders
+
+  # MongoDB
+
+  mongodb:
+    image: mongo:7
+    container_name: service-orders-mongodb
+    restart: unless-stopped
+
+    environment:
+      MONGO_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+
+    ports:
+      - "27017:27017"
+
+    volumes:
+      - mongodb-data:/data/db
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --eval \"db.adminCommand('ping').ok\""
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - service-orders
+
+  # Redis
+
+  redis:
+    image: redis:7
+    container_name: service-orders-redis
+    restart: unless-stopped
+
+    command:
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD}
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis-data:/data
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "-a",
+          "${REDIS_PASSWORD}",
+          "ping"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - service-orders
+
+  # Redpanda + Kafka + Schema Registry
+
+  redpanda:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.18
+    container_name: service-orders-redpanda
+    restart: unless-stopped
+
+    command:
+      - redpanda
+      - start
+
+      # Development mode
+      - --mode
+      - dev-container
+
+      # One CPU is enough for our local development environment
+      - --smp
+      - "1"
+
+      # Kafka listeners
+      - --kafka-addr
+      - internal://0.0.0.0:9092,external://0.0.0.0:19092
+
+      # Kafka advertised addresses
+      - --advertise-kafka-addr
+      - internal://redpanda:9092,external://localhost:19092
+
+      # Schema Registry
+      - --schema-registry-addr
+      - internal://0.0.0.0:8081,external://0.0.0.0:18081
+
+      # RPC
+      - --rpc-addr
+      - redpanda:33145
+
+      - --advertise-rpc-addr
+      - redpanda:33145
+
+    ports:
+      # Kafka
+      - "19092:19092"
+
+      # Schema Registry
+      - "18081:18081"
+
+      # Redpanda Admin API
+      - "19644:9644"
+
+    volumes:
+      - redpanda-data:/var/lib/redpanda/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "rpk cluster health"
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+    networks:
+      - service-orders
+
+  # Kafka topic initialization
+
+  kafka-init:
+    image: docker.redpanda.com/redpandadata/redpanda:v24.2.18
+    container_name: service-orders-kafka-init
+
+    depends_on:
+      redpanda:
+        condition: service_healthy
+
+    volumes:
+      - ./init/kafka-init.sh:/kafka-init.sh:ro
+
+    entrypoint:
+      - /bin/sh
+      - /kafka-init.sh
+
+    networks:
+      - service-orders
+
+  # Auth Service
+
+  auth-service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        SERVICE_NAME: auth-service
+
+    image: service-orders/auth-service:dev
+    container_name: service-orders-auth-service
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      SERVER_PORT: 8080
+
+      DATABASE_URL: jdbc:postgresql://postgres:5432/auth_db
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      SCHEMA_REGISTRY_URL: http://redpanda:8081
+
+      JWT_SECRET: ${JWT_SECRET}
+
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_ENABLED: ${ADMIN_ENABLED:-true}
+
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+    ports:
+      - "8081:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      redpanda:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
+    networks:
+      - service-orders
+
+  # User Service
+
+  user-service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        SERVICE_NAME: user-service
+
+    image: service-orders/user-service:dev
+    container_name: service-orders-user-service
+    restart: unless-stopped
+
+    environment:
+      SERVER_PORT: 8080
+
+      DATABASE_URL: jdbc:postgresql://postgres:5432/user_db
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      KAFKA_BOOTSTRAP_SERVERS: redpanda:9092
+      SCHEMA_REGISTRY_URL: http://redpanda:8081
+      KAFKA_CONSUMER_GROUP: user-service
+
+      JWT_SECRET: ${JWT_SECRET}
+
+    ports:
+      - "8082:8080"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+      redpanda:
+        condition: service_healthy
+
+    networks:
+      - service-orders
+
+# Volumes
+
+volumes:
+
+  postgres-data:
+    name: service-orders-postgres-data
+
+  mongodb-data:
+    name: service-orders-mongodb-data
+
+  redis-data:
+    name: service-orders-redis-data
+
+  redpanda-data:
+    name: service-orders-redpanda-data
+
+# Network
+
+networks:
+
+  service-orders:
+    name: service-orders-network
+    driver: bridge

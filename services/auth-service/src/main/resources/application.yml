@@ -1,0 +1,88 @@
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/auth_db}
+    username: ${DATABASE_USERNAME:service_orders}
+    password: ${DATABASE_PASSWORD:service_orders_dev}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
+    properties:
+      schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:18081}
+
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS:false}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:24h}
+    refresh-token-ttl: ${JWT_REFRESH_TOKEN_TTL:30d}
+    email-verification-ttl: ${JWT_EMAIL_VERIFICATION_TTL:24h}
+
+mail:
+  enabled: ${MAIL_ENABLED:false}
+  from: ${MAIL_FROM:no-reply@service-orders.local}
+  verification-base-url: ${MAIL_VERIFICATION_BASE_URL:http://localhost:8081/api/v1/auth/verify}
+
+  cleanup:
+    email-verification-delay: ${EMAIL_VERIFICATION_CLEANUP_DELAY:3600000}
+
+admin:
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}
+  enabled: ${ADMIN_ENABLED:true}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    try-it-out-enabled: true
+    persist-authorization: true
+    doc-expansion: none
+
+  show-actuator: true
+  use-management-port: false
+  packages-to-scan: com.stoliar.auth.controller
