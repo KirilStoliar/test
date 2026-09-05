@@ -280,6 +280,36 @@ services:
     networks:
       - service-orders
 
+  # Product Service
+
+  product-service:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        SERVICE_NAME: product-service
+
+    image: service-orders/product-service:dev
+    container_name: service-orders-product-service
+    restart: unless-stopped
+
+    environment:
+      SERVER_PORT: 8080
+
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017/product_db?authSource=admin
+
+      JWT_SECRET: ${JWT_SECRET}
+
+    ports:
+      - "8083:8080"
+
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+    networks:
+      - service-orders
+
 # Volumes
 
 volumes:

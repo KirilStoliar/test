@@ -17,11 +17,12 @@ public record UpdateProductRequest(
         @Size(max = 2000)
         String description,
 
-        @NotNull
-        @DecimalMin(value = "0.01")
-        BigDecimal price,
+        @NotBlank
+        @Size(max = 100)
+        String category,
 
         @NotNull
-        Boolean active
+        @DecimalMin(value = "0.01")
+        BigDecimal price
 ) {
 }

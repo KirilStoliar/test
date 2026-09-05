@@ -1,38 +1,42 @@
 package com.stoliar.product.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "products")
+@Document(collection = "products")
 public class ProductEntity {
 
     @Id
-    @Column(nullable = false, updatable = false)
     private UUID id;
 
-    @Column(nullable = false, length = 255)
+    @Field("name")
     private String name;
 
-    @Column(nullable = false, length = 2000)
+    @Field("description")
     private String description;
 
-    @Column(nullable = false, precision = 19, scale = 2)
+    @Field("category")
+    private String category;
+
+    @Field("price")
     private BigDecimal price;
 
-    @Column(nullable = false)
+    @Field("active")
     private Boolean active;
 
-    @Column(name = "created_at", nullable = false)
+    @CreatedDate
+    @Field("created_at")
     private Instant createdAt;
 
-    @Column(name = "updated_at", nullable = false)
+    @LastModifiedDate
+    @Field("updated_at")
     private Instant updatedAt;
 
     protected ProductEntity() {
@@ -42,6 +46,7 @@ public class ProductEntity {
             UUID id,
             String name,
             String description,
+            String category,
             BigDecimal price,
             Boolean active,
             Instant createdAt,
@@ -50,6 +55,7 @@ public class ProductEntity {
         this.id = id;
         this.name = name;
         this.description = description;
+        this.category = category;
         this.price = price;
         this.active = active;
         this.createdAt = createdAt;
@@ -66,6 +72,10 @@ public class ProductEntity {
 
     public String getDescription() {
         return description;
+    }
+
+    public String getCategory() {
+        return category;
     }
 
     public BigDecimal getPrice() {
@@ -87,13 +97,23 @@ public class ProductEntity {
     public void update(
             String name,
             String description,
-            BigDecimal price,
-            Boolean active
+            String category,
+            BigDecimal price
     ) {
         this.name = name;
         this.description = description;
+        this.category = category;
         this.price = price;
-        this.active = active;
+        this.updatedAt = Instant.now();
+    }
+
+    public void publish() {
+        this.active = true;
+        this.updatedAt = Instant.now();
+    }
+
+    public void hide() {
+        this.active = false;
         this.updatedAt = Instant.now();
     }
 }

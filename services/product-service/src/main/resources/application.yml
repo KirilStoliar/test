@@ -5,26 +5,17 @@ spring:
   application:
     name: product-service
 
-  datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/product_db}
-    username: ${DATABASE_USERNAME:service_orders}
-    password: ${DATABASE_PASSWORD:service_orders_dev}
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://service_orders:mongo_dev_password@localhost:27017/product_db?authSource=admin}
+      auto-index-creation: true
 
-    hikari:
-      maximum-pool-size: ${DATABASE_POOL_SIZE:10}
-      minimum-idle: 2
-      connection-timeout: 30000
+  jackson:
+    default-property-inclusion: non_null
 
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        format_sql: true
-
-  liquibase:
-    change-log: classpath:db/db.changelog-master.yaml
+security:
+  jwt:
+    secret: ${JWT_SECRET}
 
 management:
   endpoints:
@@ -37,3 +28,24 @@ management:
   endpoint:
     health:
       show-details: always
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    display-request-duration: true
+    try-it-out-enabled: true
+    persist-authorization: true
+    doc-expansion: none
+
+  show-actuator: true
+  use-management-port: false
+
+  packages-to-scan:
+    - com.stoliar.product.controller
