@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.Instant;
 import java.util.List;
@@ -55,6 +56,48 @@ public class GlobalExceptionHandler {
                         "status", HttpStatus.BAD_REQUEST.value(),
                         "error", "Validation failed",
                         "errors", errors,
+                        "path", request.getRequestURI()
+                ));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleTypeMismatch(
+            MethodArgumentTypeMismatchException exception,
+            HttpServletRequest request
+    ) {
+        String parameterName = exception.getName();
+
+        String message = "Invalid value for parameter: "
+                + parameterName;
+
+        if (exception.getRequiredType() != null) {
+            message += ". Expected type: "
+                    + exception.getRequiredType().getSimpleName();
+        }
+
+        return ResponseEntity
+                .badRequest()
+                .body(Map.of(
+                        "timestamp", Instant.now(),
+                        "status", HttpStatus.BAD_REQUEST.value(),
+                        "error", "Invalid parameter",
+                        "message", message,
+                        "path", request.getRequestURI()
+                ));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(
+            IllegalArgumentException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity
+                .badRequest()
+                .body(Map.of(
+                        "timestamp", Instant.now(),
+                        "status", HttpStatus.BAD_REQUEST.value(),
+                        "error", "Bad Request",
+                        "message", exception.getMessage(),
                         "path", request.getRequestURI()
                 ));
     }

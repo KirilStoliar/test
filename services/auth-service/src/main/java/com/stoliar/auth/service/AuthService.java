@@ -28,6 +28,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final UserCreatedProducer userCreatedProducer;
     private final EmailVerificationService emailVerificationService;
+    private final EmailService emailService;
 
     public AuthService(
             AuthUserRepository userRepository,
@@ -35,7 +36,8 @@ public class AuthService {
             JwtService jwtService,
             RefreshTokenService refreshTokenService,
             UserCreatedProducer userCreatedProducer,
-            EmailVerificationService emailVerificationService
+            EmailVerificationService emailVerificationService,
+            EmailService emailService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -43,6 +45,7 @@ public class AuthService {
         this.refreshTokenService = refreshTokenService;
         this.userCreatedProducer = userCreatedProducer;
         this.emailVerificationService = emailVerificationService;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -68,7 +71,13 @@ public class AuthService {
 
         userRepository.save(user);
 
-        emailVerificationService.createToken(user);
+        String verificationToken =
+                emailVerificationService.createToken(user);
+
+        emailService.sendVerificationEmail(
+                user,
+                verificationToken
+        );
 
         userCreatedProducer.publish(
                 user.getId().toString(),

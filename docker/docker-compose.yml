@@ -42,8 +42,8 @@ services:
     restart: unless-stopped
 
     environment:
-      MONGO_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
-      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
 
     ports:
       - "27017:27017"
@@ -94,6 +94,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+    networks:
+      - service-orders
+
+  # Mailpit
+
+  mailpit:
+    image: axllent/mailpit:v1.31.0
+    container_name: service-orders-mailpit
+    restart: unless-stopped
+
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
     networks:
       - service-orders
@@ -224,6 +238,16 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+      MAIL_ENABLED: ${MAIL_ENABLED:-true}
+      MAIL_HOST: ${MAIL_HOST:-mailpit}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-false}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@service-orders.local}
+      MAIL_VERIFICATION_BASE_URL: ${MAIL_VERIFICATION_BASE_URL:-http://localhost:8081/api/v1/auth/verify}
 
     ports:
       - "8081:8080"

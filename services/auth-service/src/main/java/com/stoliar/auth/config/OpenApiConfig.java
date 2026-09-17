@@ -5,7 +5,6 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
-import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
@@ -22,13 +21,28 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Auth Service API")
                         .version("1.0.0")
-                        .description("Authentication and Authorization Service for Service Orders Platform")
+                        .description("""
+                                Authentication and Authorization Service
+                                for the Service Orders Platform.
+
+                                Public endpoints:
+                                - registration
+                                - login
+                                - refresh
+                                - email verification
+
+                                Protected endpoints:
+                                - logout
+                                - current user information
+                                """)
                         .contact(new Contact()
                                 .name("Service Orders Team")
                                 .email("support@service-orders.com"))
                         .license(new License()
                                 .name("Apache 2.0")
-                                .url("https://www.apache.org/licenses/LICENSE-2.0")))
+                                .url(
+                                        "https://www.apache.org/licenses/LICENSE-2.0"
+                                )))
                 .servers(List.of(
                         new Server()
                                 .url("http://localhost:8081")
@@ -37,15 +51,17 @@ public class OpenApiConfig {
                                 .url("http://auth-service:8080")
                                 .description("Docker Internal Server")
                 ))
-                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new Components()
-                        .addSecuritySchemes("bearerAuth",
+                        .addSecuritySchemes(
+                                "bearerAuth",
                                 new SecurityScheme()
-                                        .name("bearerAuth")
+                                        .name("Authorization")
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
-                                        .description("Enter JWT token: Bearer {token}")
+                                        .description(
+                                                "Enter JWT access token"
+                                        )
                         ));
     }
 }
