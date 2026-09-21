@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.data.mongodb.core.mapping.FieldType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -25,7 +26,10 @@ public class ProductEntity {
     @Field("category")
     private String category;
 
-    @Field("price")
+    @Field(
+            value = "price",
+            targetType = FieldType.DECIMAL128
+    )
     private BigDecimal price;
 
     @Field("active")

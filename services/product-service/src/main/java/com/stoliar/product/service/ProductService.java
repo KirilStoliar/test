@@ -5,6 +5,7 @@ import com.stoliar.product.dto.UpdateProductRequest;
 import com.stoliar.product.entity.ProductEntity;
 import com.stoliar.product.exception.ProductNotFoundException;
 import com.stoliar.product.repository.ProductRepository;
+import org.bson.types.Decimal128;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -235,11 +236,27 @@ public class ProductService {
             BigDecimal minPrice,
             BigDecimal maxPrice
     ) {
+        /*
+         * ProductEntity.price is stored in MongoDB as Decimal128.
+         *
+         * Passing BigDecimal directly to Criteria.gte()/lte()
+         * results in String values in the generated Mongo query
+         * in the current configuration:
+         *
+         *     "$gte": "900"
+         *     "$lte": "1100"
+         *
+         * MongoDB cannot match those String values against
+         * the Decimal128 price field.
+         *
+         * Explicit Decimal128 conversion guarantees that the
+         * generated query uses BSON Decimal128 values.
+         */
         if (minPrice != null && maxPrice != null) {
             mongoQuery.addCriteria(
                     Criteria.where("price")
-                            .gte(minPrice)
-                            .lte(maxPrice)
+                            .gte(new Decimal128(minPrice))
+                            .lte(new Decimal128(maxPrice))
             );
             return;
         }
@@ -247,7 +264,7 @@ public class ProductService {
         if (minPrice != null) {
             mongoQuery.addCriteria(
                     Criteria.where("price")
-                            .gte(minPrice)
+                            .gte(new Decimal128(minPrice))
             );
             return;
         }
@@ -255,7 +272,7 @@ public class ProductService {
         if (maxPrice != null) {
             mongoQuery.addCriteria(
                     Criteria.where("price")
-                            .lte(maxPrice)
+                            .lte(new Decimal128(maxPrice))
             );
         }
     }

@@ -49,3 +49,8 @@ springdoc:
 
   packages-to-scan:
     - com.stoliar.product.controller
+
+logging:
+  level:
+    org.springframework.data.mongodb.core.MongoTemplate: DEBUG
+    org.springframework.data.mongodb.core.query: DEBUG
