@@ -1,0 +1,120 @@
+databaseChangeLog:
+
+  - changeSet:
+      id: 001-create-inventory-items
+      author: kiril
+
+      changes:
+
+        - createTable:
+            tableName: inventory_items
+
+            columns:
+
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_inventory_items
+                    nullable: false
+
+              - column:
+                  name: product_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uk_inventory_items_product
+
+              - column:
+                  name: stock_quantity
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: reserved_quantity
+                  type: INTEGER
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - createTable:
+            tableName: inventory_reservations
+
+            columns:
+
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_inventory_reservations
+                    nullable: false
+
+              - column:
+                  name: order_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: product_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: quantity
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: released_at
+                  type: TIMESTAMP WITH TIME ZONE
+
+        - addUniqueConstraint:
+            tableName: inventory_reservations
+            columnNames: order_id, product_id
+            constraintName: uk_inventory_reservation_order_product
+
+        - createIndex:
+            tableName: inventory_reservations
+            indexName: idx_inventory_reservations_order
+            columns:
+              - column:
+                  name: order_id
+
+        - createIndex:
+            tableName: inventory_reservations
+            indexName: idx_inventory_reservations_product
+            columns:
+              - column:
+                  name: product_id
